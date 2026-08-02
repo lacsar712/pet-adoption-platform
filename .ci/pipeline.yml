@@ -1,0 +1,49 @@
+# .ci/pipeline.yml
+# --------------------------------------------------------------------------
+# PIPELINE ENTRY (orchestration only).
+# This is the single top-level entry that ORDERS the three stages. It does
+# NOT re-declare the concrete commands of each stage — those live in
+# build.yml / test.yml / release.yml and are dispatched by the shell driver
+# (.ci/scripts/pipeline.sh -> .ci/scripts/run-stage.sh <stage>).
+#
+# Order:  build  ->  test  ->  release
+#
+# How to run everything:
+#   sh .ci/scripts/pipeline.sh
+# How to run a subset (space-separated), e.g. build + test only:
+#   PET_CI_STAGES="build test" sh .ci/scripts/pipeline.sh
+#   PET_CI_STAGES="build"      sh .ci/scripts/pipeline.sh   # only build
+#   PET_CI_STAGES="test"       sh .ci/scripts/pipeline.sh   # only test
+# Select test gates (unit|smoke), passed through to run-stage.sh:
+#   PET_TEST_GATES="unit"  PET_CI_STAGES="test" sh .ci/scripts/pipeline.sh
+# Select environment (demo|ci|staging):
+#   PET_APP_ENV=staging sh .ci/scripts/pipeline.sh
+# --------------------------------------------------------------------------
+pipeline: pet-adoption
+
+# Environment contract (names are stable; later rounds reference these):
+#   PET_APP_ENV             demo | ci | staging
+#   PET_API_PUBLISH_PORT    default 8731
+#   PET_WEB_PUBLISH_PORT    default 3731
+#   PET_DB_PUBLISH_PORT     default 5731
+#   PET_VITE_API_URL        frontend build-time API prefix
+#                           (demo/ci default /api; staging default http://localhost:8731)
+#   PET_COMPOSE_PROJECT_NAME default pet-adoption
+#   PET_CI_STAGES           subset of stages to run (default: build test release)
+#   PET_TEST_GATES          subset of test gates    (default: unit smoke)
+environment:
+  PET_APP_ENV: "${PET_APP_ENV:-ci}"
+  PET_API_PUBLISH_PORT: "${PET_API_PUBLISH_PORT:-8731}"
+  PET_WEB_PUBLISH_PORT: "${PET_WEB_PUBLISH_PORT:-3731}"
+  PET_DB_PUBLISH_PORT: "${PET_DB_PUBLISH_PORT:-5731}"
+  PET_VITE_API_URL: "${PET_VITE_API_URL:-/api}"
+  PET_COMPOSE_PROJECT_NAME: "${PET_COMPOSE_PROJECT_NAME:-pet-adoption}"
+
+# include/order: each entry maps to a stage file dispatched in sequence.
+stages:
+  - name: build
+    include: .ci/build.yml      # dispatched via: run-stage.sh build
+  - name: test
+    include: .ci/test.yml       # dispatched via: run-stage.sh test
+  - name: release
+    include: .ci/release.yml    # dispatched via: run-stage.sh release

@@ -1,0 +1,55 @@
+# .ci/test.yml
+# --------------------------------------------------------------------------
+# STAGE: test
+# Scope: ONLY how to run backend tests + lightweight static checks.
+# Declarative config executed by .ci/scripts/run-stage.sh test.
+# Referenced by name from .ci/pipeline.yml. Concrete commands live in
+# run-stage.sh (test_gate_unit / test_gate_smoke) — never copied into
+# .ci/pipeline.yml.
+#
+# IMPORTANT: the `unit` gate runs through jest + mongodb-memory-server.
+# It MUST NOT require a real Mongo container. A real Mongo service is only
+# for demo / staging integration validation, never a precondition for units.
+# --------------------------------------------------------------------------
+stage: test
+description: Backend unit tests (in-memory Mongo) + compose smoke via healthchecks.
+
+# Gate selection: PET_TEST_GATES (space-separated). Default: "unit smoke".
+#   PET_TEST_GATES="unit"        -> unit only
+#   PET_TEST_GATES="smoke"       -> smoke only
+#   PET_TEST_GATES="unit smoke"  -> both (default)
+gates:
+  unit:
+    description: Jest unit/integration tests using in-memory MongoDB + ESLint.
+    workdir: backend
+    node_version: "20"          # matches node:20 base images
+    install: "npm ci"           # only when node_modules is absent
+    env:
+      NODE_ENV: "test"          # keeps tests off any real DB
+    run:
+      - "npm run lint"          # non-fatal warnings surfaced in logs
+      - "npm test"              # jest + mongodb-memory-server
+    requires_real_mongo: false
+    # Optional quality gate: PET_TEST_COVERAGE=1 runs `npm test -- --coverage`
+    # and asserts a coverage report was produced (existence check only — NO
+    # threshold enforcement, NO changes to business tests). Default: off.
+    coverage:
+      toggle: "PET_TEST_COVERAGE=1"
+      command: "npm test -- --coverage"
+      report_paths:
+        - backend/coverage/lcov-report/index.html
+        - backend/coverage/lcov.info
+
+  smoke:
+    description: Bring the stack up (ci|staging) and probe liveness.
+    depends_on: compose-up      # docker compose up -d --build for PET_APP_ENV
+    run:
+      # externalized round-1 probes; NO inline curl in YAML
+      - "HC_PORT=${PET_API_PUBLISH_PORT:-8731} sh .ci/scripts/backend-healthcheck.sh"
+      - "HC_PORT=${PET_WEB_PUBLISH_PORT:-3731} sh .ci/scripts/frontend-healthcheck.sh"
+    requires_real_mongo: true   # smoke exercises the real db service
+
+# How the pipeline entry runs a subset:
+#   only test:            PET_CI_STAGES="test" sh .ci/scripts/pipeline.sh
+#   build + test:         PET_CI_STAGES="build test" sh .ci/scripts/pipeline.sh
+#   test, unit gate only: PET_TEST_GATES="unit" PET_CI_STAGES="test" sh .ci/scripts/pipeline.sh

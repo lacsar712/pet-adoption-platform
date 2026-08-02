@@ -1,0 +1,79 @@
+# docker-compose.staging.yml
+# --------------------------------------------------------------------------
+# STAGING overlay (pre-production validation). Applied ON TOP of the base:
+#   docker compose -f docker-compose.yml -f docker-compose.staging.yml <cmd>
+#
+# Same service semantics as round 1 (db / backend / frontend) — no renaming.
+#
+# Differences vs. demo/ci:
+#   - PET_VITE_API_URL defaults to http://localhost:8731 (see NOTE below).
+#   - A REAL Mongo service is used (this is integration/pre-prod validation),
+#     unlike CI unit tests which use mongodb-memory-server.
+#   - Explicit restart + depends_on(health) policies for pre-prod resilience.
+#   - Healthchecks reuse the round-1 externalized scripts (no inline curl).
+#
+# NOTE — why staging's API URL differs from demo's "/api":
+#   In demo/ci the browser hits the Nginx origin and "/api" is reverse-proxied
+#   to the backend, so a relative prefix works. In staging we validate the
+#   frontend talking to the backend as a distinctly published service, so the
+#   build bakes an absolute origin (http://localhost:8731) to exercise CORS
+#   and the real published backend port. See ci-docker-playbook.md §matrix.
+# --------------------------------------------------------------------------
+services:
+  db:
+    # Real Mongo for pre-prod integration; publish on the agreed DB port.
+    ports:
+      - "${PET_DB_PUBLISH_PORT:-5731}:27017"
+    restart: unless-stopped      # keep DB up across transient failures
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  backend:
+    environment:
+      PORT: 8731
+      NODE_ENV: production
+      # Pull secrets/config from the private env-file (see env.staging.example).
+      # Fallbacks keep `up` working even without an --env-file.
+      JWT_SECRET: "${JWT_SECRET:-staging-fake-jwt-secret-change-me-0000}"
+      MONGODB_URI: "${MONGODB_URI:-mongodb://db:27017/pet_adoption_staging}"
+      SEED_DEMO: "${SEED_DEMO:-true}"
+      UPLOAD_DIR: "${UPLOAD_DIR:-/app/uploads}"
+    ports:
+      - "${PET_API_PUBLISH_PORT:-8731}:8731"
+    restart: unless-stopped      # pre-prod resiliency; NOT swarm/k8s
+    depends_on:
+      db:
+        condition: service_healthy   # only start once Mongo is healthy
+    volumes:
+      - ./.ci/scripts/backend-healthcheck.sh:/opt/healthcheck.sh:ro
+    healthcheck:
+      test: ["CMD", "sh", "/opt/healthcheck.sh"]
+      interval: 10s
+      timeout: 10s
+      retries: 6
+      start_period: 15s
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Chain: PET_VITE_API_URL -> compose build arg VITE_API_URL
+        #        -> Dockerfile ARG/ENV VITE_API_URL
+        VITE_API_URL: "${PET_VITE_API_URL:-http://localhost:8731}"
+    ports:
+      - "${PET_WEB_PUBLISH_PORT:-3731}:80"
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy   # gate frontend on backend liveness
+    volumes:
+      - ./.ci/scripts/frontend-healthcheck.sh:/opt/healthcheck.sh:ro
+    healthcheck:
+      test: ["CMD", "sh", "-c", "HC_PORT=80 sh /opt/healthcheck.sh"]
+      interval: 10s
+      timeout: 10s
+      retries: 6
+      start_period: 10s

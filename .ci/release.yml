@@ -1,0 +1,62 @@
+# .ci/release.yml
+# --------------------------------------------------------------------------
+# STAGE: release (release PREPARATION only — no git, no push to registry here)
+# Scope: release gates (validate / image_exists / health_gate /
+# artifact_manifest), image tagging convention, artifact archive list.
+# Declarative config; concrete commands live in run-stage.sh
+# (release_gate_*). Referenced by name from .ci/pipeline.yml.
+# --------------------------------------------------------------------------
+stage: release
+description: Release preparation gates + tag convention + artifact manifest.
+
+# Gate selection: PET_RELEASE_GATES (space-separated). Default runs all:
+#   "validate image_exists health_gate artifact_manifest"
+gates:
+  validate:
+    description: Ensure base + ci and base + staging overlays merge cleanly.
+  image_exists:
+    description: Confirm frontend/backend images exist under the agreed tag.
+  health_gate:
+    description: Probe target env (PET_RELEASE_ENV, default staging) via round-1 scripts.
+    target_env: "${PET_RELEASE_ENV:-staging}"
+    scripts:
+      - .ci/scripts/backend-healthcheck.sh
+      - .ci/scripts/frontend-healthcheck.sh
+  artifact_manifest:
+    description: Generate .ci/out/release-manifest.md from the env contract.
+    generator: .ci/scripts/release-manifest.sh
+    output: .ci/out/release-manifest.md
+
+# Image tag convention (ROUND-3). MIGRATION NOTE: round-1 used
+# "<env>-<release-tag>" (no project name). Round 3 prefixes the project name
+# so multi-env matrix tags never collide across projects:
+#   OLD (round 1): ${PET_APP_ENV}-${PET_RELEASE_TAG}
+#   NEW (round 3): ${PET_COMPOSE_PROJECT_NAME}-${PET_APP_ENV}-${PET_RELEASE_TAG}
+# See docs/engineering/consistency-audit.md for the rationale.
+tagging:
+  backend_image: "${PET_COMPOSE_PROJECT_NAME}-backend"
+  frontend_image: "${PET_COMPOSE_PROJECT_NAME}-frontend"
+  tag_pattern: "${PET_COMPOSE_PROJECT_NAME}-${PET_APP_ENV}-${PET_RELEASE_TAG:-local}"
+
+# Files that make up a release artifact set (archive checklist).
+artifact_manifest:
+  - docker-compose.yml
+  - docker-compose.ci.yml
+  - docker-compose.staging.yml
+  - .ci/build.yml
+  - .ci/test.yml
+  - .ci/release.yml
+  - .ci/pipeline.yml
+  - .ci/config/env.staging.example
+  - .ci/scripts/pipeline.sh
+  - .ci/scripts/run-stage.sh
+  - .ci/scripts/release-manifest.sh
+  - .ci/scripts/backend-healthcheck.sh
+  - .ci/scripts/frontend-healthcheck.sh
+  - docs/engineering/ci-docker-playbook.md
+  - docs/engineering/consistency-audit.md
+
+# How the pipeline entry runs release / a gate subset:
+#   full release:   PET_CI_STAGES="release" sh .ci/scripts/pipeline.sh
+#   only manifest:  PET_RELEASE_GATES="artifact_manifest" PET_CI_STAGES="release" sh .ci/scripts/pipeline.sh
+#   skip health:    PET_RELEASE_GATES="validate image_exists artifact_manifest" ... 
