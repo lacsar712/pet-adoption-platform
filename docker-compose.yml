@@ -1,10 +1,12 @@
+name: ${PET_COMPOSE_PROJECT_NAME:-pet-adoption}
+
 services:
   db:
     image: docker.m.daocloud.io/library/mongo:7
     container_name: pet-adoption-db
     restart: unless-stopped
     ports:
-      - "5731:27017"
+      - "${PET_DB_PUBLISH_PORT:-5731}:27017"
     volumes:
       - mongo_data:/data/db
     healthcheck:
@@ -20,16 +22,27 @@ services:
     container_name: pet-adoption-backend
     restart: unless-stopped
     environment:
+      PET_APP_ENV: ${PET_APP_ENV:-demo}
       PORT: 8731
       MONGODB_URI: mongodb://db:27017/pet_adoption
       JWT_SECRET: pet-adoption-docker-secret
       SEED_DEMO: "true"
       UPLOAD_DIR: /app/uploads
       NODE_ENV: production
+      # 容器内 healthcheck 只探测一次，重试节奏交给下面的 compose retries
+      HEALTHCHECK_RETRIES: "1"
     ports:
-      - "8731:8731"
+      - "${PET_API_PUBLISH_PORT:-8731}:8731"
     volumes:
       - upload_data:/app/uploads
+      # 外置健康检查脚本（只读挂载），healthcheck 不内联 curl 命令
+      - ./.ci/scripts:/healthcheck:ro
+    healthcheck:
+      test: ["CMD", "sh", "/healthcheck/backend-healthcheck.sh", "127.0.0.1", "8731", "/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 10s
     depends_on:
       db:
         condition: service_healthy
@@ -37,13 +50,29 @@ services:
       - app-network
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        # 前端构建期 API 前缀，demo 默认 /api，由 PET_VITE_API_URL 覆盖
+        VITE_API_URL: ${PET_VITE_API_URL:-/api}
     container_name: pet-adoption-frontend
     restart: unless-stopped
+    environment:
+      PET_APP_ENV: ${PET_APP_ENV:-demo}
+      HEALTHCHECK_RETRIES: "1"
     ports:
-      - "3731:80"
+      - "${PET_WEB_PUBLISH_PORT:-3731}:80"
+    volumes:
+      - ./.ci/scripts:/healthcheck:ro
+    healthcheck:
+      test: ["CMD", "sh", "/healthcheck/frontend-healthcheck.sh", "127.0.0.1", "80", "/healthz"]
+      interval: 10s
+      timeout: 10s
+      retries: 6
+      start_period: 5s
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - app-network
 

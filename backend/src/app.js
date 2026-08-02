@@ -36,6 +36,16 @@ app.use(
 app.use(petsRoutes);
 app.use(authRoutes);
 
+// 轻量存活探测端点：不依赖 Mongo 连接，供容器/流水线 healthcheck 使用。
+// 容器内直连 http://localhost:8731/health；经 Nginx 反代时为 /api/health。
+app.get("/health", (req, res) => {
+  res.json({
+    status: "ok",
+    uptime: process.uptime(),
+    env: process.env.PET_APP_ENV || "demo"
+  });
+});
+
 app.get("/", (req, res) => {
   res.send("Servidor atualizado pelo nodemon");
 });

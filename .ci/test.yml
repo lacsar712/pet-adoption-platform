@@ -1,0 +1,65 @@
+# ============================================================================
+# .ci/test.yml —— 测试阶段（lint + 单测 + 冒烟，按 gate 分组）
+# ----------------------------------------------------------------------------
+# 本阶段定义三类门禁（gate），由 .ci/scripts/run-stage.sh 按 gate 名过滤执行：
+#   unit    ：静态检查 + jest 单测（mongodb-memory-server，绝不依赖真实 mongo）
+#   smoke   ：compose（ci 叠加）起栈后，调用第 1 轮外置 healthcheck 脚本冒烟
+#   coverage：可选质量门禁（默认关闭），jest --coverage + 报告存在性检查
+#
+# 运行环境约定：
+#   - 工作目录：仓库根目录（命令中的 backend 子路径均显式写出）
+#   - Node 版本：20（与 node:20-alpine/slim 镜像一致；CI job 或本地 Git Bash 均可）
+#   - 依赖安装：unit 门禁第一步必须 npm ci（registry 固定 npmmirror）
+#
+# 选择执行：
+#   sh .ci/scripts/run-stage.sh .ci/test.yml          # 全部门禁
+#   sh .ci/scripts/run-stage.sh .ci/test.yml unit     # 只跑 unit
+#   sh .ci/scripts/run-stage.sh .ci/test.yml smoke    # 只跑 smoke
+# 或经总入口：PET_CI_STAGES=test PET_CI_GATES=unit sh .ci/scripts/pipeline.sh
+# ============================================================================
+stage: test
+description: unit 门禁（lint+jest，内存 Mongo）与 smoke 门禁（外置 healthcheck 冒烟）
+
+gates:
+  unit:
+    # 纯 CI job 内执行，不需要任何容器/真实 mongo；mongodb-memory-server 自动
+    # 下载内存版 mongod（首次运行需可访问 npmmirror/默认二进制源）
+    steps:
+      - name: 安装后端依赖（CI 纪律：npm ci + npmmirror registry，工作目录 backend）
+        run: npm --prefix backend ci --registry=https://registry.npmmirror.com
+
+      - name: 后端静态检查（eslint，工作目录 backend）
+        run: npm --prefix backend run lint
+
+      - name: 后端单元测试（jest + mongodb-memory-server，工作目录 backend）
+        run: npm --prefix backend test
+
+  smoke:
+    # 容器化集成冒烟：起 ci 叠加栈（db 不发布宿主机端口），--wait 本身已依赖
+    # 外置 healthcheck 脚本；随后再从宿主机经发布端口复探一次
+    steps:
+      - name: 以 CI 覆盖配置启动完整栈（--wait 等待各服务 healthy）
+        run: docker compose -p "${PET_COMPOSE_PROJECT_NAME:-pet-adoption}" -f docker-compose.yml -f docker-compose.ci.yml up -d --wait
+
+      - name: 宿主机侧后端存活冒烟（发布端口 8731 探测 /health）
+        run: sh .ci/scripts/backend-healthcheck.sh localhost "${PET_API_PUBLISH_PORT:-8731}" /health
+
+      - name: 宿主机侧前端存活冒烟（发布端口 3731 探测 /healthz）
+        run: sh .ci/scripts/frontend-healthcheck.sh localhost "${PET_WEB_PUBLISH_PORT:-3731}" /healthz
+
+      - name: 冒烟收尾：拆除 ci 栈（若前面步骤失败，请手工执行同参数 down）
+        run: docker compose -p "${PET_COMPOSE_PROJECT_NAME:-pet-adoption}" -f docker-compose.yml -f docker-compose.ci.yml down
+
+  coverage:
+    # 可选门禁，默认关闭：仅当 PET_CI_GATES=coverage（或 run-stage.sh 第二参数
+    # 为 coverage）时执行。只做最小命令级开启 + 报告存在性检查，不改 jest 配置、
+    # 不设覆盖率阈值（jest 默认 coverageReporters 含 lcov，无需额外配置）。
+    steps:
+      - name: 安装后端依赖（npm ci + npmmirror，工作目录 backend）
+        run: npm --prefix backend ci --registry=https://registry.npmmirror.com
+
+      - name: 带 coverage 跑后端单测（jest --coverage，仍走 mongodb-memory-server）
+        run: npm --prefix backend test -- --coverage
+
+      - name: 检查 coverage 报告已生成（存在性检查，不卡阈值）
+        run: test -f backend/coverage/lcov.info

@@ -1,0 +1,21 @@
+# ============================================================================
+# .ci/build.yml —— 构建阶段（只描述"如何构建前后端镜像/产物"）
+# ----------------------------------------------------------------------------
+# 本文件由 .ci/scripts/run-stage.sh 逐条提取 `run:` 命令并顺序执行；
+# 每条 run 必须是单行命令（如需多行请拆成多个 step 或写入 scripts/ 下的脚本）。
+# 执行顺序由 .ci/pipeline.yml 统一编排，本文件不感知其他阶段。
+# ============================================================================
+stage: build
+description: 使用 docker compose 构建前后端镜像，强制 npm ci + 国内 registry
+
+env:
+  PET_APP_ENV: ${PET_APP_ENV:-ci}
+  PET_COMPOSE_PROJECT_NAME: ${PET_COMPOSE_PROJECT_NAME:-pet-adoption}
+  PET_VITE_API_URL: ${PET_VITE_API_URL:-/api}
+
+steps:
+  - name: 校验 lockfile 存在（npm ci 的硬前提）
+    run: test -f backend/package-lock.json && test -f frontend/package-lock.json
+
+  - name: 构建前后端镜像（compose 叠加 CI 覆盖文件，透传 VITE_API_URL 构建参数）
+    run: docker compose -p "${PET_COMPOSE_PROJECT_NAME:-pet-adoption}" -f docker-compose.yml -f docker-compose.ci.yml build
