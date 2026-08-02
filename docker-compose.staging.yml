@@ -1,0 +1,48 @@
+# ============================================================================
+# docker-compose.staging.yml —— staging（准生产验证）覆盖配置
+#
+# 用法（始终叠加在根 docker-compose.yml 之上，服务名语义不变：db/backend/frontend）：
+#   docker compose --env-file .ci/config/env.staging.local \
+#     -f docker-compose.yml -f docker-compose.staging.yml up -d --wait
+#
+# 覆盖点：
+#   1) PET_APP_ENV=staging，关闭 demo 种子数据，JWT/Mongo URI 走环境变量
+#      （键名见 .ci/config/env.staging.example，全部为假数据占位）。
+#   2) 前端构建参数 VITE_API_URL 默认 http://localhost:8731（浏览器直连后端
+#      发布端口），与 demo 的 /api（Nginx 同源反代）不同——原因见 playbook
+#      「环境矩阵」一节：staging 要验证的是跨源直连 + CORS 链路，避免把
+#      Nginx 反代配置的正确性混进准生产验证结论。
+#   3) 健康检查不在本文件重复声明：backend/frontend 继承根文件中挂接的
+#      /healthcheck/*.sh（第 1 轮外置脚本，继续禁止内联 curl 长命令），
+#      depends_on 的 service_healthy 条件也一并继承。
+#   4) 资源/重启策略：staging 模拟准生产运行姿态，三服务均 unless-stopped
+#      （进程异常退出自动拉起，但不随 Docker 守护进程强制复活已手动停止的
+#      容器）；不引入 Swarm/K8s，资源限额刻意不交容器编排，由宿主机保证。
+# ============================================================================
+services:
+  db:
+    # staging 保留真实 Mongo（准生产要验证真实驱动/索引行为）；
+    # 宿主机发布端口沿用根文件 ${PET_DB_PUBLISH_PORT:-5731}
+    restart: unless-stopped
+
+  backend:
+    restart: unless-stopped
+    environment:
+      PET_APP_ENV: staging
+      JWT_SECRET: ${JWT_SECRET:-staging-fake-jwt-secret}
+      MONGODB_URI: ${MONGODB_URI:-mongodb://db:27017/pet_adoption_staging}
+      SEED_DEMO: ${SEED_DEMO:-"false"}
+      UPLOAD_DIR: ${UPLOAD_DIR:-/app/uploads}
+      # PORT/HEALTHCHECK_RETRIES 等继承根文件；healthcheck 继承
+      # /healthcheck/backend-healthcheck.sh 127.0.0.1 8731 /health
+
+  frontend:
+    restart: unless-stopped
+    build:
+      context: ./frontend
+      args:
+        # staging 默认直连后端发布端口；仍可用 PET_VITE_API_URL 覆盖
+        VITE_API_URL: ${PET_VITE_API_URL:-http://localhost:8731}
+    environment:
+      PET_APP_ENV: staging
+      # healthcheck 继承根文件：/healthcheck/frontend-healthcheck.sh 127.0.0.1 80 /healthz

@@ -1,0 +1,27 @@
+# ============================================================================
+# .ci/pipeline.yml —— 流水线总入口（只做编排，不复制各阶段的具体命令）
+# ----------------------------------------------------------------------------
+# 调用关系（include 顺序即执行顺序，前一个失败即终止）：
+#
+#     pipeline.yml
+#        ├─ include: .ci/build.yml     (stage 1: 构建镜像)
+#        ├─ include: .ci/test.yml      (stage 2: lint + jest + 冒烟)
+#        └─ include: .ci/release.yml   (stage 3: 发布准备)
+#
+# 可执行入口为 .ci/scripts/pipeline.sh（薄调度器，仅按本文件的 include 顺序
+# 把各阶段 YAML 交给 run-stage.sh 执行，本身不含任何阶段的命令）。
+#
+# 用法：
+#   sh .ci/scripts/pipeline.sh                 # 依次跑 build -> test -> release
+#   PET_CI_STAGES="build test" sh .ci/scripts/pipeline.sh   # 只跑部分阶段
+#   PET_CI_STAGES="test" PET_CI_GATES="unit" sh .ci/scripts/pipeline.sh
+#                                             # 只跑 test 阶段的 unit 门禁
+#   （PET_CI_STAGES / PET_CI_GATES 为调度参数，详见 playbook）
+# ============================================================================
+pipeline: pet-adoption-ci
+version: 1
+
+stages:
+  - include: .ci/build.yml
+  - include: .ci/test.yml
+  - include: .ci/release.yml

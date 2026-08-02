@@ -1,0 +1,59 @@
+# ============================================================================
+# .ci/release.yml —— 发布准备阶段（发布门禁，全部本地/CI 内完成）
+# ----------------------------------------------------------------------------
+# 禁止真实推送镜像到远端仓库，禁止任何 git 操作。
+# 门禁（gate）说明（由 run-stage.sh 按 gate 名过滤，默认全部执行）：
+#   validate          compose 叠加配置可解析性校验（ci 与 staging 两种组合）
+#   image_exists      确认前后端镜像已按约定命名构建，并打发布 tag
+#   health_gate       对目标环境（默认 staging 组合）起栈并跑外置 healthcheck
+#   artifact_manifest 生成 .ci/out/release-manifest.md 归档清单
+#
+# 镜像命名/tag 规则（第 3 轮统一定版，迁移说明见 consistency-audit.md 探针 H）：
+#   构建产物（compose 自动命名）：${PET_COMPOSE_PROJECT_NAME}-<service>:latest
+#   发布 tag                    ：${PET_COMPOSE_PROJECT_NAME}-<service>:${PET_APP_ENV}-${PET_IMAGE_TAG}
+#   例：pet-adoption-backend:staging-ci-local
+# ============================================================================
+stage: release
+description: 发布门禁：配置校验、镜像存在性与打 tag、staging 健康门禁、归档清单
+
+gates:
+  validate:
+    steps:
+      - name: 校验 compose 叠加配置可解析（demo + ci 两层）
+        run: docker compose -p "${PET_COMPOSE_PROJECT_NAME:-pet-adoption}" -f docker-compose.yml -f docker-compose.ci.yml config --quiet
+
+      - name: 校验 compose 叠加配置可解析（demo + staging 两层）
+        run: docker compose -p "${PET_COMPOSE_PROJECT_NAME:-pet-adoption}-staging" -f docker-compose.yml -f docker-compose.staging.yml config --quiet
+
+  image_exists:
+    steps:
+      - name: 确认后端镜像已构建（compose 约定名 <project>-backend:latest）
+        run: docker image inspect "${PET_COMPOSE_PROJECT_NAME:-pet-adoption}-backend:latest" >/dev/null
+
+      - name: 确认前端镜像已构建（compose 约定名 <project>-frontend:latest）
+        run: docker image inspect "${PET_COMPOSE_PROJECT_NAME:-pet-adoption}-frontend:latest" >/dev/null
+
+      - name: 后端镜像打发布 tag（<project>-backend:<PET_APP_ENV>-<PET_IMAGE_TAG>）
+        run: docker tag "${PET_COMPOSE_PROJECT_NAME:-pet-adoption}-backend:latest" "${PET_COMPOSE_PROJECT_NAME:-pet-adoption}-backend:${PET_APP_ENV:-staging}-${PET_IMAGE_TAG:-ci-local}"
+
+      - name: 前端镜像打发布 tag（<project>-frontend:<PET_APP_ENV>-<PET_IMAGE_TAG>）
+        run: docker tag "${PET_COMPOSE_PROJECT_NAME:-pet-adoption}-frontend:latest" "${PET_COMPOSE_PROJECT_NAME:-pet-adoption}-frontend:${PET_APP_ENV:-staging}-${PET_IMAGE_TAG:-ci-local}"
+
+  health_gate:
+    steps:
+      - name: 启动目标环境（默认 staging 组合；--wait 本身依赖外置 healthcheck）
+        run: docker compose -p "${PET_COMPOSE_PROJECT_NAME:-pet-adoption}-staging" -f docker-compose.yml -f docker-compose.staging.yml up -d --wait
+
+      - name: 健康门禁：后端 /health（任一失败即 release 失败）
+        run: sh .ci/scripts/backend-healthcheck.sh localhost "${PET_API_PUBLISH_PORT:-8731}" /health
+
+      - name: 健康门禁：前端 /healthz（任一失败即 release 失败）
+        run: sh .ci/scripts/frontend-healthcheck.sh localhost "${PET_WEB_PUBLISH_PORT:-3731}" /healthz
+
+      - name: 健康门禁收尾：拆除 staging 栈（若前面失败，请手工执行同参数 down）
+        run: docker compose -p "${PET_COMPOSE_PROJECT_NAME:-pet-adoption}-staging" -f docker-compose.yml -f docker-compose.staging.yml down
+
+  artifact_manifest:
+    steps:
+      - name: 生成发布归档清单 .ci/out/release-manifest.md
+        run: sh .ci/scripts/release-manifest.sh

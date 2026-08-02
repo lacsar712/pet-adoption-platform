@@ -1,0 +1,35 @@
+# ============================================================================
+# docker-compose.ci.yml —— CI 场景覆盖配置（与根 docker-compose.yml 叠加使用）
+#
+# 用法：
+#   docker compose -p "${PET_COMPOSE_PROJECT_NAME:-pet-adoption}" \
+#     -f docker-compose.yml -f docker-compose.ci.yml up -d --wait
+#
+# 覆盖点：
+#   1) db 不再向宿主机发布 5731 端口，避免 CI 机器端口抢占/数据污染；
+#      后端单测走 jest + mongodb-memory-server，不依赖此真实 mongo，
+#      真实 mongo 仅供 demo / 集成冒烟使用。
+#   2) 关闭 restart 策略，CI 中容器退出码要如实反馈给流水线。
+#   3) PET_APP_ENV=ci、关闭 demo 种子数据。
+#   4) 显式透传 VITE_API_URL 构建参数（CI 可用环境变量覆盖默认值）。
+# ============================================================================
+services:
+  db:
+    # Compose Specification 的 !reset 用于清空基础文件中的 ports（需 compose v2.24+）
+    ports: !reset []
+    restart: "no"
+
+  backend:
+    restart: "no"
+    environment:
+      PET_APP_ENV: ci
+      SEED_DEMO: "false"
+
+  frontend:
+    restart: "no"
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${PET_VITE_API_URL:-/api}
+    environment:
+      PET_APP_ENV: ci
