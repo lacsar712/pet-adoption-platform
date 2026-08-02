@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+.env.*
+
+# Test coverage
+coverage/
+
+# Frontend build
+dist/
+
+# Local uploads
+uploads/
+backend/uploads/
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Editor settings
+.vscode/
