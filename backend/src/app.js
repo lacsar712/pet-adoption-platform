@@ -33,6 +33,17 @@ app.use(
   })
 );
 
+// Health probe: minimal liveness endpoint used by CI/compose healthchecks.
+// Exposed both as /health (direct container access) and /api/health
+// (through the Nginx reverse proxy, which strips the /api/ prefix).
+app.get(["/health", "/api/health"], (req, res) => {
+  res.status(200).json({
+    status: "ok",
+    service: "pet-adoption-backend",
+    uptime: process.uptime()
+  });
+});
+
 app.use(petsRoutes);
 app.use(authRoutes);
 

@@ -1,0 +1,700 @@
+
+> backend@1.0.0 test
+> jest
+
+FAIL tests/app.test.js (36.139 s)
+  ● Console
+
+    console.log
+      ◇ injected env (0) from .env // tip: ⌘ override existing { override: true }
+
+      at _log (node_modules/dotenv/lib/main.js:131:11)
+
+    console.log
+      ◇ injected env (0) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+
+      at _log (node_modules/dotenv/lib/main.js:131:11)
+
+    console.warn
+      Starting the MongoMemoryServer Instance failed, enable debug log for more information. Error:
+       StartBinaryFailedError: Starting the Binary Failed (PID is undefined)! Binary: "/app/node_modules/.cache/mongodb-memory-server/mongod-x64-alpine-7.0.14"
+          at MongoInstance._launchMongod (/app/node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:519:13)
+          at MongoInstance.start (/app/node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:394:31)
+          at Function.create (/app/node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:294:5)
+          at MongoMemoryServer._startUpInstance (/app/node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:532:22)
+          at MongoMemoryServer.start (/app/node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:350:5)
+          at Function.create (/app/node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:317:5)
+          at Object.<anonymous> (/app/tests/setup.js:9:17) {
+        binary: '/app/node_modules/.cache/mongodb-memory-server/mongod-x64-alpine-7.0.14'
+      }
+
+       7 |
+       8 | beforeAll(async () => {
+    >  9 |   mongoServer = await MongoMemoryServer.create();
+         |                 ^
+      10 |
+      11 |   const mongoUri = mongoServer.getUri();
+      12 |
+
+      at node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:359:17
+      at MongoMemoryServer.start (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:350:5)
+      at Function.create (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:317:5)
+      at Object.<anonymous> (tests/setup.js:9:17)
+
+  ● Teste da rota inicial › deve retornar mensagem do servidor
+
+    Starting the Binary Failed (PID is undefined)! Binary: "/app/node_modules/.cache/mongodb-memory-server/mongod-x64-alpine-7.0.14"
+
+       7 |
+       8 | beforeAll(async () => {
+    >  9 |   mongoServer = await MongoMemoryServer.create();
+         |                 ^
+      10 |
+      11 |   const mongoUri = mongoServer.getUri();
+      12 |
+
+      at MongoInstance._launchMongod (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:519:13)
+      at MongoInstance.start (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:394:31)
+      at Function.create (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:294:5)
+      at MongoMemoryServer._startUpInstance (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:532:22)
+      at MongoMemoryServer.start (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:350:5)
+      at Function.create (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:317:5)
+      at Object.<anonymous> (tests/setup.js:9:17)
+
+  ● Teste da rota inicial › deve retornar mensagem do servidor
+
+    MongooseError: Operation `pets.deleteMany()` buffering timed out after 10000ms
+
+      at Timeout.<anonymous> (node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+
+  ● Teste da rota inicial › deve retornar mensagem do servidor
+
+    spawn /app/node_modules/.cache/mongodb-memory-server/mongod-x64-alpine-7.0.14 ENOENT
+
+
+  ● Teste do error middleware › deve retornar erro interno do servidor
+
+    Starting the Binary Failed (PID is undefined)! Binary: "/app/node_modules/.cache/mongodb-memory-server/mongod-x64-alpine-7.0.14"
+
+       7 |
+       8 | beforeAll(async () => {
+    >  9 |   mongoServer = await MongoMemoryServer.create();
+         |                 ^
+      10 |
+      11 |   const mongoUri = mongoServer.getUri();
+      12 |
+
+      at MongoInstance._launchMongod (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:519:13)
+      at MongoInstance.start (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:394:31)
+      at Function.create (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:294:5)
+      at MongoMemoryServer._startUpInstance (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:532:22)
+      at MongoMemoryServer.start (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:350:5)
+      at Function.create (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:317:5)
+      at Object.<anonymous> (tests/setup.js:9:17)
+
+  ● Teste do error middleware › deve retornar erro interno do servidor
+
+    MongooseError: Operation `pets.deleteMany()` buffering timed out after 10000ms
+
+      at Timeout.<anonymous> (node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+
+
+  ● Test suite failed to run
+
+    TypeError: Cannot read properties of undefined (reading 'stop')
+
+      25 | afterAll(async () => {
+      26 |   await mongoose.connection.close();
+    > 27 |   await mongoServer.stop();
+         |                     ^
+      28 | });
+
+      at Object.stop (tests/setup.js:27:21)
+
+FAIL tests/auth.test.js (76.214 s)
+  ● Console
+
+    console.log
+      ◇ injected env (0) from .env // tip: ⌁ auth for agents [www.vestauth.com]
+
+      at _log (node_modules/dotenv/lib/main.js:131:11)
+
+    console.log
+      ◇ injected env (0) from .env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+
+      at _log (node_modules/dotenv/lib/main.js:131:11)
+
+    console.warn
+      Starting the MongoMemoryServer Instance failed, enable debug log for more information. Error:
+       StartBinaryFailedError: Starting the Binary Failed (PID is undefined)! Binary: "/app/node_modules/.cache/mongodb-memory-server/mongod-x64-alpine-7.0.14"
+          at MongoInstance._launchMongod (/app/node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:519:13)
+          at MongoInstance.start (/app/node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:394:31)
+          at Function.create (/app/node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:294:5)
+          at MongoMemoryServer._startUpInstance (/app/node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:532:22)
+          at MongoMemoryServer.start (/app/node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:350:5)
+          at Function.create (/app/node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:317:5)
+          at Object.<anonymous> (/app/tests/setup.js:9:17) {
+        binary: '/app/node_modules/.cache/mongodb-memory-server/mongod-x64-alpine-7.0.14'
+      }
+
+       7 |
+       8 | beforeAll(async () => {
+    >  9 |   mongoServer = await MongoMemoryServer.create();
+         |                 ^
+      10 |
+      11 |   const mongoUri = mongoServer.getUri();
+      12 |
+
+      at node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:359:17
+      at MongoMemoryServer.start (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:350:5)
+      at Function.create (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:317:5)
+      at Object.<anonymous> (tests/setup.js:9:17)
+
+  ● Testes de autenticação › deve cadastrar um novo usuário
+
+    Starting the Binary Failed (PID is undefined)! Binary: "/app/node_modules/.cache/mongodb-memory-server/mongod-x64-alpine-7.0.14"
+
+       7 |
+       8 | beforeAll(async () => {
+    >  9 |   mongoServer = await MongoMemoryServer.create();
+         |                 ^
+      10 |
+      11 |   const mongoUri = mongoServer.getUri();
+      12 |
+
+      at MongoInstance._launchMongod (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:519:13)
+      at MongoInstance.start (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:394:31)
+      at Function.create (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:294:5)
+      at MongoMemoryServer._startUpInstance (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:532:22)
+      at MongoMemoryServer.start (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:350:5)
+      at Function.create (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:317:5)
+      at Object.<anonymous> (tests/setup.js:9:17)
+
+  ● Testes de autenticação › deve cadastrar um novo usuário
+
+    MongooseError: Operation `pets.deleteMany()` buffering timed out after 10000ms
+
+      at Timeout.<anonymous> (node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+
+  ● Testes de autenticação › deve cadastrar um novo usuário
+
+    spawn /app/node_modules/.cache/mongodb-memory-server/mongod-x64-alpine-7.0.14 ENOENT
+
+
+  ● deve realizar login de um usuário
+
+    Starting the Binary Failed (PID is undefined)! Binary: "/app/node_modules/.cache/mongodb-memory-server/mongod-x64-alpine-7.0.14"
+
+       7 |
+       8 | beforeAll(async () => {
+    >  9 |   mongoServer = await MongoMemoryServer.create();
+         |                 ^
+      10 |
+      11 |   const mongoUri = mongoServer.getUri();
+      12 |
+
+      at MongoInstance._launchMongod (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:519:13)
+      at MongoInstance.start (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:394:31)
+      at Function.create (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:294:5)
+      at MongoMemoryServer._startUpInstance (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:532:22)
+      at MongoMemoryServer.start (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:350:5)
+      at Function.create (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:317:5)
+      at Object.<anonymous> (tests/setup.js:9:17)
+
+  ● deve realizar login de um usuário
+
+    MongooseError: Operation `pets.deleteMany()` buffering timed out after 10000ms
+
+      at Timeout.<anonymous> (node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+
+  ● não deve permitir cadastro com email já existente
+
+    Starting the Binary Failed (PID is undefined)! Binary: "/app/node_modules/.cache/mongodb-memory-server/mongod-x64-alpine-7.0.14"
+
+       7 |
+       8 | beforeAll(async () => {
+    >  9 |   mongoServer = await MongoMemoryServer.create();
+         |                 ^
+      10 |
+      11 |   const mongoUri = mongoServer.getUri();
+      12 |
+
+      at MongoInstance._launchMongod (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:519:13)
+      at MongoInstance.start (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:394:31)
+      at Function.create (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:294:5)
+      at MongoMemoryServer._startUpInstance (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:532:22)
+      at MongoMemoryServer.start (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:350:5)
+      at Function.create (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:317:5)
+      at Object.<anonymous> (tests/setup.js:9:17)
+
+  ● não deve permitir cadastro com email já existente
+
+    MongooseError: Operation `pets.deleteMany()` buffering timed out after 10000ms
+
+      at Timeout.<anonymous> (node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+
+  ● não deve permitir login com senha incorreta
+
+    Starting the Binary Failed (PID is undefined)! Binary: "/app/node_modules/.cache/mongodb-memory-server/mongod-x64-alpine-7.0.14"
+
+       7 |
+       8 | beforeAll(async () => {
+    >  9 |   mongoServer = await MongoMemoryServer.create();
+         |                 ^
+      10 |
+      11 |   const mongoUri = mongoServer.getUri();
+      12 |
+
+      at MongoInstance._launchMongod (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:519:13)
+      at MongoInstance.start (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:394:31)
+      at Function.create (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:294:5)
+      at MongoMemoryServer._startUpInstance (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:532:22)
+      at MongoMemoryServer.start (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:350:5)
+      at Function.create (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:317:5)
+      at Object.<anonymous> (tests/setup.js:9:17)
+
+  ● não deve permitir login com senha incorreta
+
+    MongooseError: Operation `pets.deleteMany()` buffering timed out after 10000ms
+
+      at Timeout.<anonymous> (node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+
+  ● deve retornar dados do usuário autenticado
+
+    Starting the Binary Failed (PID is undefined)! Binary: "/app/node_modules/.cache/mongodb-memory-server/mongod-x64-alpine-7.0.14"
+
+       7 |
+       8 | beforeAll(async () => {
+    >  9 |   mongoServer = await MongoMemoryServer.create();
+         |                 ^
+      10 |
+      11 |   const mongoUri = mongoServer.getUri();
+      12 |
+
+      at MongoInstance._launchMongod (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:519:13)
+      at MongoInstance.start (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:394:31)
+      at Function.create (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:294:5)
+      at MongoMemoryServer._startUpInstance (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:532:22)
+      at MongoMemoryServer.start (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:350:5)
+      at Function.create (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:317:5)
+      at Object.<anonymous> (tests/setup.js:9:17)
+
+  ● deve retornar dados do usuário autenticado
+
+    MongooseError: Operation `pets.deleteMany()` buffering timed out after 10000ms
+
+      at Timeout.<anonymous> (node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+
+  ● não deve acessar /auth/me sem token
+
+    Starting the Binary Failed (PID is undefined)! Binary: "/app/node_modules/.cache/mongodb-memory-server/mongod-x64-alpine-7.0.14"
+
+       7 |
+       8 | beforeAll(async () => {
+    >  9 |   mongoServer = await MongoMemoryServer.create();
+         |                 ^
+      10 |
+      11 |   const mongoUri = mongoServer.getUri();
+      12 |
+
+      at MongoInstance._launchMongod (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:519:13)
+      at MongoInstance.start (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:394:31)
+      at Function.create (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:294:5)
+      at MongoMemoryServer._startUpInstance (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:532:22)
+      at MongoMemoryServer.start (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:350:5)
+      at Function.create (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:317:5)
+      at Object.<anonymous> (tests/setup.js:9:17)
+
+  ● não deve acessar /auth/me sem token
+
+    MongooseError: Operation `pets.deleteMany()` buffering timed out after 10000ms
+
+      at Timeout.<anonymous> (node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+
+
+  ● Test suite failed to run
+
+    TypeError: Cannot read properties of undefined (reading 'stop')
+
+      25 | afterAll(async () => {
+      26 |   await mongoose.connection.close();
+    > 27 |   await mongoServer.stop();
+         |                     ^
+      28 | });
+
+      at Object.stop (tests/setup.js:27:21)
+
+FAIL tests/pets.test.js (145.457 s)
+  ● Console
+
+    console.log
+      ◇ injected env (0) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+
+      at _log (node_modules/dotenv/lib/main.js:131:11)
+
+    console.log
+      ◇ injected env (0) from .env // tip: ⌘ enable debugging { debug: true }
+
+      at _log (node_modules/dotenv/lib/main.js:131:11)
+
+    console.warn
+      Starting the MongoMemoryServer Instance failed, enable debug log for more information. Error:
+       StartBinaryFailedError: Starting the Binary Failed (PID is undefined)! Binary: "/app/node_modules/.cache/mongodb-memory-server/mongod-x64-alpine-7.0.14"
+          at MongoInstance._launchMongod (/app/node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:519:13)
+          at MongoInstance.start (/app/node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:394:31)
+          at Function.create (/app/node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:294:5)
+          at MongoMemoryServer._startUpInstance (/app/node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:532:22)
+          at MongoMemoryServer.start (/app/node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:350:5)
+          at Function.create (/app/node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:317:5)
+          at Object.<anonymous> (/app/tests/setup.js:9:17) {
+        binary: '/app/node_modules/.cache/mongodb-memory-server/mongod-x64-alpine-7.0.14'
+      }
+
+       7 |
+       8 | beforeAll(async () => {
+    >  9 |   mongoServer = await MongoMemoryServer.create();
+         |                 ^
+      10 |
+      11 |   const mongoUri = mongoServer.getUri();
+      12 |
+
+      at node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:359:17
+      at MongoMemoryServer.start (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:350:5)
+      at Function.create (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:317:5)
+      at Object.<anonymous> (tests/setup.js:9:17)
+
+  ● Testes de pets › deve listar todos os pets
+
+    Starting the Binary Failed (PID is undefined)! Binary: "/app/node_modules/.cache/mongodb-memory-server/mongod-x64-alpine-7.0.14"
+
+       7 |
+       8 | beforeAll(async () => {
+    >  9 |   mongoServer = await MongoMemoryServer.create();
+         |                 ^
+      10 |
+      11 |   const mongoUri = mongoServer.getUri();
+      12 |
+
+      at MongoInstance._launchMongod (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:519:13)
+      at MongoInstance.start (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:394:31)
+      at Function.create (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:294:5)
+      at MongoMemoryServer._startUpInstance (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:532:22)
+      at MongoMemoryServer.start (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:350:5)
+      at Function.create (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:317:5)
+      at Object.<anonymous> (tests/setup.js:9:17)
+
+  ● Testes de pets › deve listar todos os pets
+
+    MongooseError: Operation `pets.deleteMany()` buffering timed out after 10000ms
+
+      at Timeout.<anonymous> (node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+
+  ● Testes de pets › deve listar todos os pets
+
+    spawn /app/node_modules/.cache/mongodb-memory-server/mongod-x64-alpine-7.0.14 ENOENT
+
+
+  ● deve criar um pet para um usuário autenticado
+
+    Starting the Binary Failed (PID is undefined)! Binary: "/app/node_modules/.cache/mongodb-memory-server/mongod-x64-alpine-7.0.14"
+
+       7 |
+       8 | beforeAll(async () => {
+    >  9 |   mongoServer = await MongoMemoryServer.create();
+         |                 ^
+      10 |
+      11 |   const mongoUri = mongoServer.getUri();
+      12 |
+
+      at MongoInstance._launchMongod (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:519:13)
+      at MongoInstance.start (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:394:31)
+      at Function.create (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:294:5)
+      at MongoMemoryServer._startUpInstance (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:532:22)
+      at MongoMemoryServer.start (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:350:5)
+      at Function.create (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:317:5)
+      at Object.<anonymous> (tests/setup.js:9:17)
+
+  ● deve criar um pet para um usuário autenticado
+
+    MongooseError: Operation `pets.deleteMany()` buffering timed out after 10000ms
+
+      at Timeout.<anonymous> (node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+
+  ● não deve permitir que outro usuário edite um pet
+
+    Starting the Binary Failed (PID is undefined)! Binary: "/app/node_modules/.cache/mongodb-memory-server/mongod-x64-alpine-7.0.14"
+
+       7 |
+       8 | beforeAll(async () => {
+    >  9 |   mongoServer = await MongoMemoryServer.create();
+         |                 ^
+      10 |
+      11 |   const mongoUri = mongoServer.getUri();
+      12 |
+
+      at MongoInstance._launchMongod (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:519:13)
+      at MongoInstance.start (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:394:31)
+      at Function.create (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:294:5)
+      at MongoMemoryServer._startUpInstance (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:532:22)
+      at MongoMemoryServer.start (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:350:5)
+      at Function.create (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:317:5)
+      at Object.<anonymous> (tests/setup.js:9:17)
+
+  ● não deve permitir que outro usuário edite um pet
+
+    MongooseError: Operation `pets.deleteMany()` buffering timed out after 10000ms
+
+      at Timeout.<anonymous> (node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+
+  ● não deve permitir que outro usuário delete um pet
+
+    Starting the Binary Failed (PID is undefined)! Binary: "/app/node_modules/.cache/mongodb-memory-server/mongod-x64-alpine-7.0.14"
+
+       7 |
+       8 | beforeAll(async () => {
+    >  9 |   mongoServer = await MongoMemoryServer.create();
+         |                 ^
+      10 |
+      11 |   const mongoUri = mongoServer.getUri();
+      12 |
+
+      at MongoInstance._launchMongod (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:519:13)
+      at MongoInstance.start (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:394:31)
+      at Function.create (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:294:5)
+      at MongoMemoryServer._startUpInstance (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:532:22)
+      at MongoMemoryServer.start (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:350:5)
+      at Function.create (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:317:5)
+      at Object.<anonymous> (tests/setup.js:9:17)
+
+  ● não deve permitir que outro usuário delete um pet
+
+    MongooseError: Operation `pets.deleteMany()` buffering timed out after 10000ms
+
+      at Timeout.<anonymous> (node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+
+  ● deve permitir que o dono edite seu próprio pet
+
+    Starting the Binary Failed (PID is undefined)! Binary: "/app/node_modules/.cache/mongodb-memory-server/mongod-x64-alpine-7.0.14"
+
+       7 |
+       8 | beforeAll(async () => {
+    >  9 |   mongoServer = await MongoMemoryServer.create();
+         |                 ^
+      10 |
+      11 |   const mongoUri = mongoServer.getUri();
+      12 |
+
+      at MongoInstance._launchMongod (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:519:13)
+      at MongoInstance.start (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:394:31)
+      at Function.create (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:294:5)
+      at MongoMemoryServer._startUpInstance (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:532:22)
+      at MongoMemoryServer.start (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:350:5)
+      at Function.create (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:317:5)
+      at Object.<anonymous> (tests/setup.js:9:17)
+
+  ● deve permitir que o dono edite seu próprio pet
+
+    MongooseError: Operation `pets.deleteMany()` buffering timed out after 10000ms
+
+      at Timeout.<anonymous> (node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+
+  ● deve permitir que o dono delete seu próprio pet
+
+    Starting the Binary Failed (PID is undefined)! Binary: "/app/node_modules/.cache/mongodb-memory-server/mongod-x64-alpine-7.0.14"
+
+       7 |
+       8 | beforeAll(async () => {
+    >  9 |   mongoServer = await MongoMemoryServer.create();
+         |                 ^
+      10 |
+      11 |   const mongoUri = mongoServer.getUri();
+      12 |
+
+      at MongoInstance._launchMongod (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:519:13)
+      at MongoInstance.start (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:394:31)
+      at Function.create (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:294:5)
+      at MongoMemoryServer._startUpInstance (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:532:22)
+      at MongoMemoryServer.start (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:350:5)
+      at Function.create (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:317:5)
+      at Object.<anonymous> (tests/setup.js:9:17)
+
+  ● deve permitir que o dono delete seu próprio pet
+
+    MongooseError: Operation `pets.deleteMany()` buffering timed out after 10000ms
+
+      at Timeout.<anonymous> (node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+
+  ● deve buscar um pet pelo ID
+
+    Starting the Binary Failed (PID is undefined)! Binary: "/app/node_modules/.cache/mongodb-memory-server/mongod-x64-alpine-7.0.14"
+
+       7 |
+       8 | beforeAll(async () => {
+    >  9 |   mongoServer = await MongoMemoryServer.create();
+         |                 ^
+      10 |
+      11 |   const mongoUri = mongoServer.getUri();
+      12 |
+
+      at MongoInstance._launchMongod (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:519:13)
+      at MongoInstance.start (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:394:31)
+      at Function.create (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:294:5)
+      at MongoMemoryServer._startUpInstance (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:532:22)
+      at MongoMemoryServer.start (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:350:5)
+      at Function.create (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:317:5)
+      at Object.<anonymous> (tests/setup.js:9:17)
+
+  ● deve buscar um pet pelo ID
+
+    MongooseError: Operation `pets.deleteMany()` buffering timed out after 10000ms
+
+      at Timeout.<anonymous> (node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+
+  ● deve retornar erro ao buscar pet inexistente
+
+    Starting the Binary Failed (PID is undefined)! Binary: "/app/node_modules/.cache/mongodb-memory-server/mongod-x64-alpine-7.0.14"
+
+       7 |
+       8 | beforeAll(async () => {
+    >  9 |   mongoServer = await MongoMemoryServer.create();
+         |                 ^
+      10 |
+      11 |   const mongoUri = mongoServer.getUri();
+      12 |
+
+      at MongoInstance._launchMongod (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:519:13)
+      at MongoInstance.start (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:394:31)
+      at Function.create (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:294:5)
+      at MongoMemoryServer._startUpInstance (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:532:22)
+      at MongoMemoryServer.start (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:350:5)
+      at Function.create (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:317:5)
+      at Object.<anonymous> (tests/setup.js:9:17)
+
+  ● deve retornar erro ao buscar pet inexistente
+
+    MongooseError: Operation `pets.deleteMany()` buffering timed out after 10000ms
+
+      at Timeout.<anonymous> (node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+
+  ● deve retornar erro para ID de pet inválido
+
+    Starting the Binary Failed (PID is undefined)! Binary: "/app/node_modules/.cache/mongodb-memory-server/mongod-x64-alpine-7.0.14"
+
+       7 |
+       8 | beforeAll(async () => {
+    >  9 |   mongoServer = await MongoMemoryServer.create();
+         |                 ^
+      10 |
+      11 |   const mongoUri = mongoServer.getUri();
+      12 |
+
+      at MongoInstance._launchMongod (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:519:13)
+      at MongoInstance.start (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:394:31)
+      at Function.create (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:294:5)
+      at MongoMemoryServer._startUpInstance (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:532:22)
+      at MongoMemoryServer.start (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:350:5)
+      at Function.create (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:317:5)
+      at Object.<anonymous> (tests/setup.js:9:17)
+
+  ● deve retornar erro para ID de pet inválido
+
+    MongooseError: Operation `pets.deleteMany()` buffering timed out after 10000ms
+
+      at Timeout.<anonymous> (node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+
+  ● deve retornar erro ao criar pet sem campo obrigatório
+
+    Starting the Binary Failed (PID is undefined)! Binary: "/app/node_modules/.cache/mongodb-memory-server/mongod-x64-alpine-7.0.14"
+
+       7 |
+       8 | beforeAll(async () => {
+    >  9 |   mongoServer = await MongoMemoryServer.create();
+         |                 ^
+      10 |
+      11 |   const mongoUri = mongoServer.getUri();
+      12 |
+
+      at MongoInstance._launchMongod (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:519:13)
+      at MongoInstance.start (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:394:31)
+      at Function.create (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:294:5)
+      at MongoMemoryServer._startUpInstance (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:532:22)
+      at MongoMemoryServer.start (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:350:5)
+      at Function.create (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:317:5)
+      at Object.<anonymous> (tests/setup.js:9:17)
+
+  ● deve retornar erro ao criar pet sem campo obrigatório
+
+    MongooseError: Operation `pets.deleteMany()` buffering timed out after 10000ms
+
+      at Timeout.<anonymous> (node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+
+  ● não deve permitir acesso com token inválido
+
+    Starting the Binary Failed (PID is undefined)! Binary: "/app/node_modules/.cache/mongodb-memory-server/mongod-x64-alpine-7.0.14"
+
+       7 |
+       8 | beforeAll(async () => {
+    >  9 |   mongoServer = await MongoMemoryServer.create();
+         |                 ^
+      10 |
+      11 |   const mongoUri = mongoServer.getUri();
+      12 |
+
+      at MongoInstance._launchMongod (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:519:13)
+      at MongoInstance.start (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:394:31)
+      at Function.create (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:294:5)
+      at MongoMemoryServer._startUpInstance (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:532:22)
+      at MongoMemoryServer.start (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:350:5)
+      at Function.create (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:317:5)
+      at Object.<anonymous> (tests/setup.js:9:17)
+
+  ● não deve permitir acesso com token inválido
+
+    MongooseError: Operation `pets.deleteMany()` buffering timed out after 10000ms
+
+      at Timeout.<anonymous> (node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+
+  ● não deve permitir criar pet sem autenticação
+
+    Starting the Binary Failed (PID is undefined)! Binary: "/app/node_modules/.cache/mongodb-memory-server/mongod-x64-alpine-7.0.14"
+
+       7 |
+       8 | beforeAll(async () => {
+    >  9 |   mongoServer = await MongoMemoryServer.create();
+         |                 ^
+      10 |
+      11 |   const mongoUri = mongoServer.getUri();
+      12 |
+
+      at MongoInstance._launchMongod (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:519:13)
+      at MongoInstance.start (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:394:31)
+      at Function.create (node_modules/mongodb-memory-server-core/src/util/MongoInstance.ts:294:5)
+      at MongoMemoryServer._startUpInstance (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:532:22)
+      at MongoMemoryServer.start (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:350:5)
+      at Function.create (node_modules/mongodb-memory-server-core/src/MongoMemoryServer.ts:317:5)
+      at Object.<anonymous> (tests/setup.js:9:17)
+
+  ● não deve permitir criar pet sem autenticação
+
+    MongooseError: Operation `pets.deleteMany()` buffering timed out after 10000ms
+
+      at Timeout.<anonymous> (node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+
+
+  ● Test suite failed to run
+
+    TypeError: Cannot read properties of undefined (reading 'stop')
+
+      25 | afterAll(async () => {
+      26 |   await mongoose.connection.close();
+    > 27 |   await mongoServer.stop();
+         |                     ^
+      28 | });
+
+      at Object.stop (tests/setup.js:27:21)
+
+Test Suites: 3 failed, 3 total
+Tests:       20 failed, 20 total
+Snapshots:   0 total
+Time:        147.794 s
+Ran all test suites.

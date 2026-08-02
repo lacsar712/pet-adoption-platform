@@ -1,0 +1,43 @@
+# .ci/build.yml
+# --------------------------------------------------------------------------
+# STAGE: build
+# Scope: ONLY how to build the frontend/backend images & artifacts.
+# This file is declarative configuration. It is executed by
+# .ci/scripts/run-stage.sh build  (never by copy-pasting commands elsewhere).
+# The pipeline entry (.ci/pipeline.yml) references this stage by name.
+# --------------------------------------------------------------------------
+stage: build
+description: Build backend and frontend container images reproducibly.
+
+# Dependency / base-image discipline (enforced inside the Dockerfiles too):
+#   - frontend builder : node:20-alpine  (DaoCloud accelerated)
+#   - frontend runtime : nginx:alpine
+#   - backend          : node:20-slim    (DaoCloud accelerated)
+#   - install command  : npm ci  (NEVER npm install in Docker/CI path)
+#   - npm registry     : https://registry.npmmirror.com
+image_discipline:
+  npm_install_command: "npm ci"
+  npm_registry: "https://registry.npmmirror.com"
+  frontend_builder_image: "docker.m.daocloud.io/library/node:20-alpine"
+  frontend_runtime_image: "docker.m.daocloud.io/library/nginx:alpine"
+  backend_image: "docker.m.daocloud.io/library/node:20-slim"
+
+# Build args passed through to the frontend build (see docker-compose.ci.yml).
+build_args:
+  VITE_API_URL: "${PET_VITE_API_URL:-/api}"
+
+steps:
+  - name: build-images
+    description: Build backend + frontend images via compose (base + ci overlay).
+    run: >
+      docker compose
+      -p "${PET_COMPOSE_PROJECT_NAME:-pet-adoption}"
+      -f docker-compose.yml -f docker-compose.ci.yml
+      build
+      --build-arg VITE_API_URL="${PET_VITE_API_URL:-/api}"
+
+  - name: verify-compose
+    description: Validate that base + ci compose files merge without error.
+    run: >
+      docker compose
+      -f docker-compose.yml -f docker-compose.ci.yml config >/dev/null
