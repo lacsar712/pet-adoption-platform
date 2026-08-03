@@ -1,0 +1,36 @@
+# Stage: release (publish preparation only — NO registry push, NO git ops)
+# Implementation: .ci/scripts/stage-release.sh
+name: release
+description: >-
+  Three local/CI gates, none of which push images or touch git.
+  image_exists confirms <project>-backend:latest and -frontend:latest were
+  built and tags them as :<PET_IMAGE_TAG> (default <PET_APP_ENV>-latest,
+  retaining the round 1/2 tag rule). health_gate brings up the target env
+  (default staging, override PET_RELEASE_ENV) and execs the round-1 external
+  healthcheck scripts inside both containers; failure fails the release.
+  artifact_manifest validates all three compose configs and renders
+  .ci/out/release-manifest.md from
+  docs/engineering/release-manifest.example.md.
+env:
+  PET_APP_ENV: demo              # controls default PET_IMAGE_TAG (<env>-latest)
+  PET_COMPOSE_PROJECT_NAME: pet-adoption
+  PET_IMAGE_TAG: demo-latest     # default <PET_APP_ENV>-latest
+  PET_RELEASE_ENV: staging       # target env for health_gate (demo|ci|staging)
+  PET_OUT_DIR: .ci/out
+steps:
+  - name: image_exists
+    description: >-
+      Assert backend/frontend :latest images exist, tag them as
+      :<PET_IMAGE_TAG>, re-assert. Fails if build stage was skipped.
+    run: sh .ci/scripts/stage-release.sh image_exists
+  - name: health_gate
+    description: >-
+      docker compose up -d --wait for PET_RELEASE_ENV (default staging),
+      then exec /ci/scripts/backend-healthcheck.sh and
+      /ci/scripts/frontend-healthcheck.sh inside the containers.
+    run: sh .ci/scripts/stage-release.sh health_gate
+  - name: artifact_manifest
+    description: >-
+      Validate demo/ci/staging compose configs and render a concrete release
+      manifest into .ci/out/release-manifest.md from the committed template.
+    run: sh .ci/scripts/stage-release.sh artifact_manifest

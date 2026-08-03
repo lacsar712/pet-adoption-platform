@@ -1,0 +1,39 @@
+# CI override for docker-compose.yml.
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d
+#
+# Differences from the demo compose:
+#   * No host ports are published (services only talk over the internal
+#     app-network; CI uses `docker compose exec` or `docker compose run`
+#     for in-network checks).
+#   * PET_APP_ENV is pinned to ci.
+#   * Healthcheck intervals are tighter for faster CI feedback.
+#
+# NOTE: Backend unit tests (jest + mongodb-memory-server) do NOT need the db
+# service at all; they are executed by .ci/scripts/stage-test.sh directly on
+# the CI runner. This file is for image building and optional integration
+# smoke tests only.
+services:
+  db:
+    ports: !override []
+
+  backend:
+    environment:
+      PET_APP_ENV: ci
+    ports: !override []
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  frontend:
+    environment:
+      PET_APP_ENV: ci
+    ports: !override []
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s

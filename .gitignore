@@ -24,3 +24,11 @@ Thumbs.db
 
 # Editor settings
 .vscode/
+
+# CI pipeline artifacts
+.ci/.artifacts/
+.ci/out/
+
+# Private environment files (copy from *.example, never commit)
+.ci/config/env.staging
+.ci/config/*.local

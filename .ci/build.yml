@@ -1,0 +1,23 @@
+# Stage: build
+# Builds backend + frontend container images via docker compose.
+# Implementation: .ci/scripts/stage-build.sh
+name: build
+description: >-
+  Build backend (node:20-slim) and frontend (node:20-alpine -> nginx:alpine)
+  images. The script verifies package-lock.json files exist, then runs
+  `docker compose build` using the overlay selected by PET_APP_ENV
+  (demo: base only; ci: +docker-compose.ci.yml; staging:
+  +docker-compose.staging.yml). PET_VITE_API_URL is injected into the
+  frontend image as build arg VITE_API_URL by the compose file, picked up by
+  the Dockerfile ARG/ENV, and consumed via import.meta.env.VITE_API_URL.
+  All dependency installation inside images uses `npm ci` with the npmmirror
+  registry (set in the Dockerfiles).
+env:
+  PET_APP_ENV: demo            # demo | ci | staging
+  PET_COMPOSE_PROJECT_NAME: pet-adoption
+  PET_VITE_API_URL: /api       # staging overlay defaults to http://localhost:8731
+  NPM_CONFIG_REGISTRY: https://registry.npmmirror.com
+steps:
+  - name: build-images
+    description: Verify lockfiles, then `docker compose build` all services.
+    run: sh .ci/scripts/stage-build.sh

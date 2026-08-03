@@ -1,0 +1,58 @@
+# Staging overlay for quasi-production verification.
+#
+# Usage (see docs/engineering/ci-docker-playbook.md §3.3 for the full flow):
+#   cp .ci/config/env.staging.example .ci/config/env.staging
+#   # edit .ci/config/env.staging, then:
+#   docker compose --env-file .ci/config/env.staging \
+#     -f docker-compose.yml -f docker-compose.staging.yml up -d --build
+#
+# This overlay layers on top of docker-compose.yml (same service names
+# db/backend/frontend — it does NOT introduce a parallel service set).
+#
+# Differences from demo:
+#   * Frontend is built with an ABSOLUTE API URL
+#     (default http://localhost:8731) instead of the same-origin "/api".
+#     Rationale: demo relies on Nginx reverse-proxying /api to the backend,
+#     so the browser only ever talks to one origin (3731). Staging verifies
+#     the production-like cross-origin path where the browser calls the API
+#     origin directly; this exercises the CORS allow-list and matches a
+#     deployment in which web and API are served from different origins.
+#   * PET_APP_ENV is pinned to "staging".
+#   * Real Mongo (db service) is used — staging is an integration shape,
+#     not an in-memory unit-test shape.
+#   * Secrets/config are supplied via `--env-file .ci/config/env.staging`
+#     (see .ci/config/env.staging.example). The base compose maps PET_*
+#     interpolation vars onto the container's JWT_SECRET / MONGODB_URI / etc.
+#
+# Healthchecks: the round-1 external scripts (backend-healthcheck.sh /
+# frontend-healthcheck.sh) are inherited from docker-compose.yml via the
+# read-only /ci/scripts bind mount. No curl command is inlined here.
+#
+# Resource / restart policy (no Swarm / K8s, plain Compose only):
+#   * restart: unless-stopped is inherited from the base file for db,
+#     backend and frontend (staging stays up across host restarts, but can
+#     be stopped deliberately).
+#   * Startup ordering uses depends_on with condition: service_healthy,
+#     inherited from base: backend waits for db healthy, frontend waits for
+#     backend healthy. This prevents the well-known "backend starts before
+#     Mongo is ready" crash loop.
+#   * We do NOT set deploy.resources here: that key is Swarm-only and would
+#     be ignored by `docker compose up`. CPU/memory limits, if ever needed,
+#     belong in a later round behind an explicit decision.
+services:
+  backend:
+    environment:
+      PET_APP_ENV: staging
+    # restart: unless-stopped, ports, healthcheck, volumes and depends_on
+    # are inherited from docker-compose.yml.
+
+  frontend:
+    build:
+      args:
+        # Compose interpolation default is overridden for staging; can still
+        # be forced by exporting PET_VITE_API_URL before invoking compose.
+        VITE_API_URL: ${PET_VITE_API_URL:-http://localhost:8731}
+    environment:
+      PET_APP_ENV: staging
+    # restart: unless-stopped, ports, healthcheck, volumes and depends_on
+    # (backend service_healthy) are inherited from docker-compose.yml.
