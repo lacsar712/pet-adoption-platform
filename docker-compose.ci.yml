@@ -1,0 +1,32 @@
+# docker-compose.ci.yml
+# CI overlay applied on top of docker-compose.yml.
+#
+# Purpose:
+#  - Do NOT publish host ports (CI runs in an isolated Docker network;
+#    publishing 3731/8731/5731 on the CI host is unnecessary and can cause
+#    port collisions).
+#  - Attach the externalized healthcheck scripts read-only.
+#  - Disable restart policy so crashed containers do not loop on CI.
+#  - Keep the real db service available for optional integration checks;
+#    unit tests (jest + mongodb-memory-server) do NOT use it and do not
+#    require compose to be up — see .ci/scripts/test.sh.
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.ci.yml config
+#   docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d --build
+
+services:
+  db:
+    ports: !override []
+    restart: "no"
+
+  backend:
+    ports: !override []
+    restart: "no"
+    environment:
+      NODE_ENV: production
+      SEED_DEMO: "false"
+
+  frontend:
+    ports: !override []
+    restart: "no"

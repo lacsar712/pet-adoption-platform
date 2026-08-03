@@ -24,3 +24,12 @@ Thumbs.db
 
 # Editor settings
 .vscode/
+
+# CI generated outputs
+.ci/out/
+
+# CI private env files (only *.example is tracked)
+.ci/config/*.local
+.ci/config/env.staging
+.ci/config/env.*
+!.ci/config/env.*.example

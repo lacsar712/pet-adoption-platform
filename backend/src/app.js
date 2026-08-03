@@ -40,6 +40,10 @@ app.get("/", (req, res) => {
   res.send("Servidor atualizado pelo nodemon");
 });
 
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok", service: "backend" });
+});
+
 app.use(errorMiddleware);
 
 module.exports = app;

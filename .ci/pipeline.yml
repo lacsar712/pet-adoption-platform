@@ -1,0 +1,66 @@
+# .ci/pipeline.yml
+# Stage: pipeline (top-level entry)
+# Responsibility: orchestrate the build -> test -> release stages in order.
+# This file only describes the stage order; it MUST NOT duplicate concrete
+# commands. Each stage delegates to its own *.yml + scripts/*.sh pair.
+#
+# Run the whole pipeline with:
+#   bash .ci/scripts/run-pipeline.sh
+# or run a single stage / subset:
+#   bash .ci/scripts/run-pipeline.sh --stages build
+#   bash .ci/scripts/run-pipeline.sh --stages test --test-gate unit
+#   bash .ci/scripts/run-pipeline.sh --stages build,test
+# Stage drivers can also be invoked directly:
+#   bash .ci/scripts/build.sh
+#   bash .ci/scripts/test.sh [unit|smoke|all]
+#   bash .ci/scripts/release.sh
+
+pipeline: pet-adoption
+description: >
+  Reproducible container build + test + release-preparation skeleton.
+  Designed to run on a CI machine with only Docker + bash available.
+
+env:
+  PET_APP_ENV: "demo"              # demo | ci | staging
+  PET_COMPOSE_PROJECT_NAME: "pet-adoption"
+  PET_API_PUBLISH_PORT: "8731"
+  PET_WEB_PUBLISH_PORT: "3731"
+  PET_DB_PUBLISH_PORT: "5731"
+  PET_VITE_API_URL: ""             # empty -> per-env default (/api, staging: http://localhost:8731)
+  PET_RELEASE_TAG: ""              # empty -> per-env default = PET_APP_ENV (demo|ci|staging)
+  NPM_REGISTRY: "https://registry.npmmirror.com"
+
+# Ordered stages. Each entry maps to .ci/<name>.yml and .ci/scripts/<name>.sh.
+# The test stage accepts a gate argument: unit|smoke|all (see .ci/test.yml).
+stages:
+  - name: build
+    spec: .ci/build.yml
+    script: .ci/scripts/build.sh
+  - name: test
+    spec: .ci/test.yml
+    script: .ci/scripts/test.sh
+    arg: "[unit|smoke|all]"
+  - name: release
+    spec: .ci/release.yml
+    script: .ci/scripts/release.sh
+
+# Environment matrix: compose overlays + per-env defaults.
+matrix:
+  demo:
+    compose: [docker-compose.yml]
+    vite_api_url: "/api"
+    real_mongo: true
+  ci:
+    compose: [docker-compose.yml, docker-compose.ci.yml]
+    vite_api_url: "/api"
+    real_mongo: false            # unit tests use mongodb-memory-server
+  staging:
+    compose: [docker-compose.yml, docker-compose.staging.yml]
+    vite_api_url: "http://localhost:8731"
+    real_mongo: true
+
+# Healthcheck scripts are externalized so CMD / entrypoint only starts the
+# process; compose `healthcheck.test` calls these scripts by mounted path.
+healthchecks:
+  backend: .ci/scripts/backend-healthcheck.sh
+  frontend: .ci/scripts/frontend-healthcheck.sh

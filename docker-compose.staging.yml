@@ -1,0 +1,65 @@
+# docker-compose.staging.yml
+# Staging overlay applied on top of docker-compose.yml.
+#
+# Purpose: near-production validation on a single host.
+#  - Same service semantics as demo (db / backend / frontend); no rename.
+#  - Frontend is built with an ABSOLUTE backend URL so it can be opened
+#    directly from a browser / preview without depending on the Nginx
+#    /api reverse proxy. Default: http://localhost:8731 (the backend
+#    publish port). Override PET_VITE_API_URL for a real staging host.
+#  - Externalized healthcheck scripts remain mounted (no inline curl);
+#    backend/frontend declare depends_on with service_healthy condition.
+#  - restart policy stays unless-stopped (a crashed staging service should
+#    recover, unlike CI). deploy.resources are plain Compose limits and do
+#    NOT require Swarm/K8s.
+#  - Demo seeding is disabled by default.
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.staging.yml up -d --build
+#
+# Pre-req (optional, for secrets/config):
+#   cp .ci/config/env.staging.example .ci/config/env.staging
+#   # edit values, then:
+#   docker compose --env-file .ci/config/env.staging \
+#     -f docker-compose.yml -f docker-compose.staging.yml up -d --build
+
+services:
+  db:
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  backend:
+    build:
+      args:
+        NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmmirror.com}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      SEED_DEMO: ${SEED_DEMO:-false}
+      JWT_SECRET: ${JWT_SECRET:-staging-fake-secret-replace-me}
+      MONGODB_URI: ${MONGODB_URI:-mongodb://db:27017/pet_adoption_staging}
+      UPLOAD_DIR: ${UPLOAD_DIR:-/app/uploads}
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      args:
+        VITE_API_URL: ${PET_VITE_API_URL:-http://localhost:8731}
+        NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmmirror.com}
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 96M
+    depends_on:
+      backend:
+        condition: service_healthy

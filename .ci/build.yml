@@ -1,0 +1,67 @@
+# .ci/build.yml
+# Stage: build
+# Responsibility: build backend and frontend container images / artifacts only.
+# This file is declarative metadata consumed by `.ci/scripts/build.sh`.
+# Do not put business logic here; commands live in the referenced shell script.
+
+stage: build
+description: >
+  Build reproducible container images for backend and frontend.
+  Enforces npm ci + npmmirror registry, passes build args (e.g. VITE_API_URL),
+  and produces the rendered frontend dist for release archiving.
+
+# Environment variables (with defaults) consumed by this stage.
+# Override them on the shell or via .env when running locally / in CI.
+env:
+  PET_APP_ENV: "demo"              # demo | ci | staging
+  PET_COMPOSE_PROJECT_NAME: "pet-adoption"
+  PET_API_PUBLISH_PORT: "8731"
+  PET_WEB_PUBLISH_PORT: "3731"
+  PET_DB_PUBLISH_PORT: "5731"
+  PET_VITE_API_URL: ""             # empty -> per-env default (/api, staging: http://localhost:8731)
+  PET_RELEASE_TAG: ""              # empty -> per-env default = PET_APP_ENV (demo|ci|staging)
+  NPM_REGISTRY: "https://registry.npmmirror.com"
+
+# The driver script that actually performs the build.
+script: .ci/scripts/build.sh
+
+# Dockerfile build-args propagated to the frontend image.
+build_args:
+  frontend:
+    VITE_API_URL: "${PET_VITE_API_URL}"
+    NPM_REGISTRY: "${NPM_REGISTRY}"
+  backend:
+    NPM_REGISTRY: "${NPM_REGISTRY}"
+
+# Artifacts produced / expected after this stage.
+artifacts:
+  images:
+    - "${PET_COMPOSE_PROJECT_NAME}-backend:${PET_RELEASE_TAG}"
+    - "${PET_COMPOSE_PROJECT_NAME}-frontend:${PET_RELEASE_TAG}"
+  files:
+    - ".ci/out/frontend-dist.tar.gz"
+
+# Compose file selection per environment.
+compose:
+  demo:
+    - docker-compose.yml
+  ci:
+    - docker-compose.yml
+    - docker-compose.ci.yml
+  staging:
+    - docker-compose.yml
+    - docker-compose.staging.yml
+
+# Per-environment default image tag. build.sh applies these when
+# PET_RELEASE_TAG is not explicitly set.
+release_tag_defaults:
+  demo: "demo"
+  ci: "ci"
+  staging: "staging"
+
+# Per-environment default VITE_API_URL. build.sh applies these when
+# PET_VITE_API_URL is not explicitly set.
+vite_api_url_defaults:
+  demo: "/api"
+  ci: "/api"
+  staging: "http://localhost:8731"
