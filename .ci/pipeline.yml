@@ -1,0 +1,42 @@
+# Pipeline entrypoint (round 2: demo + ci + staging matrix, parameterized).
+#
+# Orchestration order:
+#   build  -> .ci/build.yml   (.ci/scripts/stage-build.sh)
+#   test   -> .ci/test.yml    (.ci/scripts/stage-test.sh)   [unit + smoke]
+#   release-> .ci/release.yml (.ci/scripts/stage-release.sh)
+#
+# Shell driver: .ci/scripts/run-pipeline.sh (dispatches the selected stages;
+# stage commands are NOT duplicated here).
+#
+# Selecting stages:
+#   sh .ci/scripts/run-pipeline.sh                 # build test release
+#   sh .ci/scripts/run-pipeline.sh build           # build only
+#   sh .ci/scripts/run-pipeline.sh test            # test only (unit + smoke)
+#   sh .ci/scripts/run-pipeline.sh build test      # build then test
+#   PET_TEST_KIND=smoke sh .ci/scripts/run-pipeline.sh test
+#
+# Selecting environment:
+#   PET_APP_ENV=demo|ci|staging
+name: pet-adoption-pipeline
+description: >-
+  Reproducible container build + dependency discipline + CI-ready pipeline
+  for the Pet Adoption Platform, across demo / ci / staging environments.
+env:
+  PET_APP_ENV: demo            # demo | ci | staging
+  PET_COMPOSE_PROJECT_NAME: pet-adoption
+  PET_API_PUBLISH_PORT: "8731"
+  PET_WEB_PUBLISH_PORT: "3731"
+  PET_DB_PUBLISH_PORT: "5731"
+  PET_VITE_API_URL: /api
+  PET_IMAGE_TAG: demo-latest
+  PET_TEST_KIND: all           # unit | smoke | all
+  PET_COVERAGE_GATE: "false"   # set "true" to assert coverage/lcov.info exists
+  PET_RELEASE_ENV: staging     # target env for release health_gate
+  PET_OUT_DIR: .ci/out
+stages:
+  - name: build
+    uses: ./.ci/build.yml
+  - name: test
+    uses: ./.ci/test.yml
+  - name: release
+    uses: ./.ci/release.yml

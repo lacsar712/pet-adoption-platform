@@ -1,0 +1,33 @@
+# Stage: test
+# Two independent gates: unit and smoke.
+# Implementation: .ci/scripts/stage-test.sh
+name: test
+description: >-
+  Runs two gates. The `unit` gate runs backend `npm ci` -> `npm run lint` ->
+  `npm test` (jest with mongodb-memory-server from tests/setup.js, Node 20 on
+  the CI job/host, workdir backend/) and frontend `npm ci` -> `npm run lint`
+  (workdir frontend/); it never starts the real db service, avoiding port
+  contention and data pollution. The `smoke` gate brings up the compose stack
+  for PET_APP_ENV=ci|staging, waits for health, and execs the round-1
+  backend-healthcheck.sh / frontend-healthcheck.sh inside the containers.
+env:
+  PET_APP_ENV: ci              # demo | ci | staging
+  PET_COMPOSE_PROJECT_NAME: pet-adoption
+  PET_TEST_KIND: all           # unit | smoke | all
+  PET_NODE_VERSION: "20"
+  PET_COVERAGE_GATE: "false"   # set "true" to run jest --coverage and assert coverage/lcov.info exists
+  NPM_CONFIG_REGISTRY: https://registry.npmmirror.com
+  CI: "true"
+steps:
+  - name: unit
+    description: >-
+      Backend npm ci + eslint + jest (mongodb-memory-server, no real Mongo),
+      optional coverage existence gate (PET_COVERAGE_GATE=true), then frontend
+      npm ci + eslint. Runs on the CI job with Node 20.
+    run: sh .ci/scripts/stage-test.sh unit
+  - name: smoke
+    description: >-
+      docker compose up -d --build --wait for the selected PET_APP_ENV, then
+      exec /ci/scripts/backend-healthcheck.sh and
+      /ci/scripts/frontend-healthcheck.sh inside the running containers.
+    run: sh .ci/scripts/stage-test.sh smoke

@@ -1,10 +1,10 @@
 services:
   db:
     image: docker.m.daocloud.io/library/mongo:7
-    container_name: pet-adoption-db
+    container_name: ${PET_COMPOSE_PROJECT_NAME:-pet-adoption}-db
     restart: unless-stopped
     ports:
-      - "5731:27017"
+      - "${PET_DB_PUBLISH_PORT:-5731}:27017"
     volumes:
       - mongo_data:/data/db
     healthcheck:
@@ -17,19 +17,28 @@ services:
 
   backend:
     build: ./backend
-    container_name: pet-adoption-backend
+    image: ${PET_COMPOSE_PROJECT_NAME:-pet-adoption}-backend:latest
+    container_name: ${PET_COMPOSE_PROJECT_NAME:-pet-adoption}-backend
     restart: unless-stopped
     environment:
       PORT: 8731
-      MONGODB_URI: mongodb://db:27017/pet_adoption
-      JWT_SECRET: pet-adoption-docker-secret
-      SEED_DEMO: "true"
-      UPLOAD_DIR: /app/uploads
+      MONGODB_URI: ${PET_MONGODB_URI:-mongodb://db:27017/pet_adoption}
+      JWT_SECRET: ${PET_JWT_SECRET:-pet-adoption-docker-secret}
+      SEED_DEMO: ${PET_SEED_DEMO:-true}
+      UPLOAD_DIR: ${PET_UPLOAD_DIR:-/app/uploads}
       NODE_ENV: production
+      PET_APP_ENV: ${PET_APP_ENV:-demo}
     ports:
-      - "8731:8731"
+      - "${PET_API_PUBLISH_PORT:-8731}:8731"
     volumes:
       - upload_data:/app/uploads
+      - ./.ci/scripts:/ci/scripts:ro
+    healthcheck:
+      test: ["CMD", "sh", "/ci/scripts/backend-healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 15s
     depends_on:
       db:
         condition: service_healthy
@@ -37,13 +46,26 @@ services:
       - app-network
 
   frontend:
-    build: ./frontend
-    container_name: pet-adoption-frontend
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${PET_VITE_API_URL:-/api}
+    image: ${PET_COMPOSE_PROJECT_NAME:-pet-adoption}-frontend:latest
+    container_name: ${PET_COMPOSE_PROJECT_NAME:-pet-adoption}-frontend
     restart: unless-stopped
     ports:
-      - "3731:80"
+      - "${PET_WEB_PUBLISH_PORT:-3731}:80"
+    volumes:
+      - ./.ci/scripts:/ci/scripts:ro
+    healthcheck:
+      test: ["CMD", "sh", "/ci/scripts/frontend-healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - app-network
 

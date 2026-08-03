@@ -22,6 +22,16 @@ describe("Teste da rota inicial", () => {
   });
 });
 
+describe("Health check", () => {
+  it("GET /health retorna status ok", async () => {
+    const response = await request(app).get("/health");
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body.status).toBe("ok");
+    expect(typeof response.body.uptime).toBe("number");
+  });
+});
+
 
 describe("Teste do error middleware", () => {
   it("deve retornar erro interno do servidor", async () => {

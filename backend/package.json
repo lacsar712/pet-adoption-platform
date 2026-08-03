@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "jest",
+    "test:coverage": "jest --coverage",
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
     "lint": "eslint ."
