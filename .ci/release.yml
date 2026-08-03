@@ -1,0 +1,83 @@
+# .ci/release.yml
+# Stage: release
+# Responsibility: release-PREPARATION gates only — no registry push, no git.
+# Three gates are implemented by .ci/scripts/release.sh:
+#   image_exists      : backend/frontend images must exist locally under the
+#                       environment tag rule:
+#                         <PET_COMPOSE_PROJECT_NAME>-<service>:<PET_RELEASE_TAG>
+#                       PET_RELEASE_TAG defaults to PET_APP_ENV
+#                       (e.g. pet-adoption-backend:staging).
+#   health_gate       : run the externalized healthcheck scripts inside the
+#                       target env's containers (default PET_APP_ENV=staging).
+#   artifact_manifest : validate merged compose config + frontend dist archive,
+#                       then render .ci/out/release-manifest.md from the tracked
+#                       template .ci/release-manifest.template.md. A human
+#                       reference copy lives at
+#                       docs/engineering/release-manifest.example.md.
+
+stage: release
+description: >
+  Local/CI release-preparation gates. Confirms env-tagged images exist,
+  services pass the externalized healthchecks, and renders a release manifest.
+  Does NOT push images or run any git command.
+
+env:
+  PET_APP_ENV: "staging"           # demo | ci | staging; release targets staging by default
+  PET_COMPOSE_PROJECT_NAME: "pet-adoption"
+  PET_RELEASE_TAG: ""              # empty -> default = PET_APP_ENV
+  PET_VITE_API_URL: ""             # empty -> per-env default
+  RELEASE_SKIP_HEALTH: "false"     # set "true" to skip the live health gate
+
+script: .ci/scripts/release.sh
+
+compose:
+  demo:
+    - docker-compose.yml
+  ci:
+    - docker-compose.yml
+    - docker-compose.ci.yml
+  staging:
+    - docker-compose.yml
+    - docker-compose.staging.yml
+
+# Tag rule (stable):
+#   repository = ${PET_COMPOSE_PROJECT_NAME}-<service>
+#   tag        = ${PET_RELEASE_TAG:-$PET_APP_ENV}
+tag_rule:
+  repository_prefix: "${PET_COMPOSE_PROJECT_NAME}-"
+  tag: "${PET_RELEASE_TAG:-${PET_APP_ENV}}"
+  examples:
+    - "pet-adoption-backend:staging"
+    - "pet-adoption-frontend:staging"
+    - "pet-adoption-backend:ci"
+
+gates:
+  image_exists:
+    description: "Confirm backend/frontend images exist locally under the env tag."
+    images:
+      - "${PET_COMPOSE_PROJECT_NAME}-backend:${PET_RELEASE_TAG:-${PET_APP_ENV}}"
+      - "${PET_COMPOSE_PROJECT_NAME}-frontend:${PET_RELEASE_TAG:-${PET_APP_ENV}}"
+  health_gate:
+    description: "Exec externalized healthcheck scripts inside running containers."
+    target_env: "${PET_APP_ENV}"
+    probes:
+      - service: backend
+        script: .ci/scripts/backend-healthcheck.sh
+        invoke: "docker compose exec -T backend sh /tmp/backend-healthcheck.sh"
+      - service: frontend
+        script: .ci/scripts/frontend-healthcheck.sh
+        invoke: "docker compose exec -T frontend sh /tmp/frontend-healthcheck.sh"
+  artifact_manifest:
+    description: "Validate compose config + dist archive and render the manifest."
+    checks:
+      - "docker compose config validation"
+      - "frontend dist archive exists (.ci/out/frontend-dist.tar.gz)"
+    template: ".ci/release-manifest.template.md"
+    example: "docs/engineering/release-manifest.example.md"
+    output: ".ci/out/release-manifest.md"
+
+artifacts:
+  manifest: ".ci/out/release-manifest.md"
+  images:
+    - "${PET_COMPOSE_PROJECT_NAME}-backend:${PET_RELEASE_TAG:-${PET_APP_ENV}}"
+    - "${PET_COMPOSE_PROJECT_NAME}-frontend:${PET_RELEASE_TAG:-${PET_APP_ENV}}"

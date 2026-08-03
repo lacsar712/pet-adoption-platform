@@ -1,0 +1,86 @@
+# .ci/test.yml
+# Stage: test
+# Responsibility: define quality gates. This stage has TWO gates:
+#   - unit : backend jest unit tests + eslint, using mongodb-memory-server
+#            (NO real MongoDB container required). Runs in a disposable
+#            node:20-slim container with backend/ mounted at /app.
+#   - smoke: after a compose stack (ci or staging) is up, exec the
+#            externalized backend/frontend healthcheck scripts inside the
+#            running containers to assert liveness end-to-end.
+#
+# Gate selection is performed by .ci/scripts/test.sh:
+#   bash .ci/scripts/test.sh unit     # default when no arg given
+#   bash .ci/scripts/test.sh smoke
+#   bash .ci/scripts/test.sh all      # unit then smoke
+
+stage: test
+description: >
+  Two-gate test stage. `unit` runs npm ci + lint + jest inside node:20-slim
+  (workdir /app = mounted backend/, tests use mongodb-memory-server).
+  `smoke` brings up the selected compose stack with `--wait` (health gating)
+  and invokes the externalized healthcheck scripts via `docker compose exec`.
+
+env:
+  PET_APP_ENV: "ci"                # demo | ci | staging; smoke uses this to pick compose
+  PET_COMPOSE_PROJECT_NAME: "pet-adoption"
+  BACKEND_IMAGE: "docker.m.daocloud.io/library/node:20-slim"
+  NPM_REGISTRY: "https://registry.npmmirror.com"
+  NODE_VERSION: "20"
+  CI: "true"
+  SMOKE_SERVICES: "backend frontend"
+  # Optional coverage gate (default OFF). When "true", `unit` runs jest with
+  # --coverage and then asserts that a coverage report file exists. This is an
+  # existence check only; it does not enforce a coverage threshold and does not
+  # require changing business tests.
+  TEST_COVERAGE: "false"
+  COVERAGE_REPORT: "coverage/coverage-summary.json"
+
+script: .ci/scripts/test.sh
+arg: "[unit|smoke|all]"
+
+# Compose overlay selected by PET_APP_ENV for the smoke gate.
+compose:
+  demo:
+    - docker-compose.yml
+  ci:
+    - docker-compose.yml
+    - docker-compose.ci.yml
+  staging:
+    - docker-compose.yml
+    - docker-compose.staging.yml
+
+gates:
+  unit:
+    requires_db: false
+    workdir: /app                 # backend/ mounted here at runtime
+    image: "${BACKEND_IMAGE}"
+    node_version: "${NODE_VERSION}"
+    install: "npm ci"
+    steps:
+      - name: lint
+        run: "npm run lint"
+      - name: jest
+        run: "npm test -- --runInBand"
+        # When TEST_COVERAGE=true, run as: npm test -- --runInBand --coverage
+        coverage_flag: "--coverage"
+    coverage_gate:
+      enabled_env: "TEST_COVERAGE"   # gate on when this env == "true"
+      expect_file: "${COVERAGE_REPORT}"
+      description: "Existence check only; no threshold, no business test changes."
+    artifacts:
+      - ".ci/out/test-report.txt"
+      - ".ci/out/coverage-report.txt"
+
+  smoke:
+    requires_db: true             # uses the real db service from compose
+    depends_on_gate: unit         # run unit first when invoked via 'all'
+    stack_up: "docker compose up -d --build --wait"
+    probes:
+      - service: backend
+        invoke: "docker compose exec -T backend sh /tmp/backend-healthcheck.sh"
+        script: .ci/scripts/backend-healthcheck.sh
+      - service: frontend
+        invoke: "docker compose exec -T frontend sh /tmp/frontend-healthcheck.sh"
+        script: .ci/scripts/frontend-healthcheck.sh
+    artifacts:
+      - ".ci/out/smoke-report.txt"

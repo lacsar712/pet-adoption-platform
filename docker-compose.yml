@@ -1,10 +1,10 @@
 services:
   db:
     image: docker.m.daocloud.io/library/mongo:7
-    container_name: pet-adoption-db
+    container_name: ${PET_COMPOSE_PROJECT_NAME:-pet-adoption}-db
     restart: unless-stopped
     ports:
-      - "5731:27017"
+      - "${PET_DB_PUBLISH_PORT:-5731}:27017"
     volumes:
       - mongo_data:/data/db
     healthcheck:
@@ -16,8 +16,12 @@ services:
       - app-network
 
   backend:
-    build: ./backend
-    container_name: pet-adoption-backend
+    build:
+      context: ./backend
+      args:
+        NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmmirror.com}
+    image: ${PET_COMPOSE_PROJECT_NAME:-pet-adoption}-backend:${PET_RELEASE_TAG:-${PET_APP_ENV:-demo}}
+    container_name: ${PET_COMPOSE_PROJECT_NAME:-pet-adoption}-backend
     restart: unless-stopped
     environment:
       PORT: 8731
@@ -27,9 +31,16 @@ services:
       UPLOAD_DIR: /app/uploads
       NODE_ENV: production
     ports:
-      - "8731:8731"
+      - "${PET_API_PUBLISH_PORT:-8731}:8731"
     volumes:
       - upload_data:/app/uploads
+      - ./.ci/scripts/backend-healthcheck.sh:/tmp/backend-healthcheck.sh:ro
+    healthcheck:
+      test: ["CMD", "sh", "/tmp/backend-healthcheck.sh"]
+      interval: 10s
+      timeout: 10s
+      retries: 6
+      start_period: 20s
     depends_on:
       db:
         condition: service_healthy
@@ -37,13 +48,27 @@ services:
       - app-network
 
   frontend:
-    build: ./frontend
-    container_name: pet-adoption-frontend
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${PET_VITE_API_URL:-/api}
+        NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmmirror.com}
+    image: ${PET_COMPOSE_PROJECT_NAME:-pet-adoption}-frontend:${PET_RELEASE_TAG:-${PET_APP_ENV:-demo}}
+    container_name: ${PET_COMPOSE_PROJECT_NAME:-pet-adoption}-frontend
     restart: unless-stopped
     ports:
-      - "3731:80"
+      - "${PET_WEB_PUBLISH_PORT:-3731}:80"
+    volumes:
+      - ./.ci/scripts/frontend-healthcheck.sh:/tmp/frontend-healthcheck.sh:ro
+    healthcheck:
+      test: ["CMD", "sh", "/tmp/frontend-healthcheck.sh"]
+      interval: 10s
+      timeout: 10s
+      retries: 6
+      start_period: 10s
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - app-network
 
